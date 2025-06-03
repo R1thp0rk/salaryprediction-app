@@ -17,6 +17,7 @@ st.title("💼 Job Salary Prediction")
 
 term = st.selectbox("Term", ['Full-time', 'Part-time', 'Contract', 'Internship'])
 experience = st.slider("Years of Experience", 0, 30, 1)
+hiring = st.selectbox("Hiring Type", ['Direct', 'Agency', 'Referral'])  # Added this missing field
 qualification = st.selectbox("Qualification", ['Bachelor', 'Master', 'Diploma', 'High School', 'PhD'])
 sex = st.selectbox("Sex", ['Male', 'Female', 'Other'])
 language = st.text_input("Language", "English")
@@ -31,6 +32,7 @@ if st.button("Predict Salary"):
     input_data = pd.DataFrame([{
         'Term': term,
         'Year of Exp.': experience,
+        'Hiring': hiring,  # Added this missing field
         'Qualification': qualification,
         'Sex': sex,
         'Language': language,
