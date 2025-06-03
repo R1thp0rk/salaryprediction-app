@@ -11,26 +11,22 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load the trained model
 model = joblib.load('salary_predictor.pkl')
 
-# App title
 st.title("💼 Job Salary Prediction")
 
-# User inputs
 term = st.selectbox("Term", ['Full-time', 'Part-time', 'Contract', 'Internship'])
 experience = st.slider("Years of Experience", 0, 30, 1)
 qualification = st.selectbox("Qualification", ['Bachelor', 'Master', 'Diploma', 'High School', 'PhD'])
 sex = st.selectbox("Sex", ['Male', 'Female', 'Other'])
 language = st.text_input("Language", "English")
 age = st.slider("Age", 18, 65, 25)
-location = st.selectbox("Location", ['Phnom Penh', 'Siem Reap', 'Battambang'])  # Replace with real values
-level = st.selectbox("Job Level", ['Entry', 'Mid', 'Senior', 'Manager'])  # Replace with real values
+location = st.selectbox("Location", ['Phnom Penh', 'Siem Reap', 'Battambang'])
+level = st.selectbox("Job Level", ['Entry', 'Mid', 'Senior', 'Manager'])
 job_title = st.text_input("Standardized Job Title", "Data Analyst")
 category = st.text_input("Standardized Category", "IT")
 industry = st.text_input("Standardized Industry", "Banking")
 
-# Predict salary
 if st.button("Predict Salary"):
     input_data = pd.DataFrame([{
         'Term': term,
