@@ -1,8 +1,7 @@
-streamlit==1.28.1
-pandas==2.0.3
-numpy==1.24.3
-scikit-learn==1.3.0
-matplotlib==3.8.4
-seaborn==0.13.2
-joblib==1.4.2
-pickle-mixin==1.0.2
+streamlit==1.34.0
+pandas==2.2.2
+scikit-learn==1.5.2  # Use a more recent stable version
+numpy>=1.26.4,<2.0  # Use a stable numpy version compatible with scikit-learn
+python-dateutil>=2.8.2  # Required by pandas
+pytz>=2020.1  # Required by pandas
+tzdata>=2022.7  # Required by pandas
