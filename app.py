@@ -197,7 +197,7 @@ def salary_predictor():
         # Additional fields that might be required by the model
         col3, col4 = st.columns(2)
         with col3:
-            level = st.selectbox("Level", ["Junior", "Mid", "Senior", "Lead", "Manager"])
+            level = st.selectbox("Level", ["Junior", "Mid", "Senior", "Lead", "Manager","Boss"])
         with col4:
             category = st.selectbox("Job Category", [
                 "Engineering", "Sales", "Marketing", "HR", "Finance", "Operations"
