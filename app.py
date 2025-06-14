@@ -1,4 +1,202 @@
-"Year of Exp.": [years_exp],
+import streamlit as st
+import joblib
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+
+# Load the pre-trained model and preprocessor
+@st.cache_resource
+def load_model_and_preprocessor():
+    try:
+        # Try to load the model
+        model = joblib.load('salary_predictor.pkl')
+        
+        # Try to load preprocessor if it exists
+        try:
+            preprocessor = joblib.load('preprocessor.pkl')
+        except FileNotFoundError:
+            # If preprocessor doesn't exist, we'll create one
+            # You'll need to recreate this based on your training data
+            preprocessor = None
+            
+        return model, preprocessor
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        return None, None
+
+# Get model feature names to understand what the model expects
+def get_model_feature_names():
+    """Try to extract feature names from the model"""
+    try:
+        if hasattr(model, 'feature_names_in_'):
+            return model.feature_names_in_
+        elif hasattr(model, 'n_features_in_'):
+            # We know the number of features but not the names
+            return None
+        else:
+            return None
+    except:
+        return None
+
+# Create a preprocessing function that matches training data format
+def preprocess_input_data(input_data):
+    """
+    Preprocess input data to match the model's expected format
+    """
+    try:
+        # First, let's see what the model expects
+        feature_names = get_model_feature_names()
+        
+        if feature_names is not None:
+            st.info(f"Model expects {len(feature_names)} features")
+            with st.expander("Expected Features"):
+                st.write(list(feature_names))
+        
+        # Strategy 1: Try to create the exact features the model expects
+        # We'll manually create dummy variables and ensure they match
+        
+        processed_data = pd.DataFrame()
+        
+        # Handle numerical features
+        numerical_cols = ['Year of Exp.', 'Age']
+        for col in numerical_cols:
+            if col in input_data.columns:
+                processed_data[col] = input_data[col]
+        
+        # Handle categorical features - we need to create specific dummy columns
+        # Based on common training practices, let's create the likely feature names
+        
+        categorical_mappings = {
+            'Term': ['Full-time', 'Part-time', 'Contract', 'Temporary', 'Internship'],
+            'Hiring': ['Direct Hire', 'Recruiter', 'Agency', 'Other'],
+            'Industry': ['Technology', 'Finance', 'Healthcare', 'Manufacturing', 'Education', 'Retail', 'Other'],
+            'Qualification': ['High School', "Bachelor's", "Master's", 'PhD', 'Professional Certification', 'Other'],
+            'Sex': ['Male', 'Female', 'Other'],
+            'Language': ['English', 'Spanish', 'French', 'German', 'Other'],
+            'Location': ['Urban', 'Suburban', 'Rural', 'Metropolitan', 'Other'],
+        }
+        
+        # Create dummy variables for each categorical column
+        for col, categories in categorical_mappings.items():
+            if col in input_data.columns:
+                for category in categories:
+                    # Create column name as it would appear after pd.get_dummies
+                    column_name = f"{col}_{category}"
+                    processed_data[column_name] = (input_data[col] == category).astype(int)
+        
+        # Handle text fields that might need special processing
+        text_fields = ['Standardized_Job_Title', 'Level_Updated', 'Standardized_Category', 'Standardized_Industry']
+        for col in text_fields:
+            if col in input_data.columns:
+                # For now, let's try to include them as-is or create simple mappings
+                if col == 'Level_Updated':
+                    levels = ['Junior', 'Mid', 'Senior', 'Lead', 'Manager']
+                    for level in levels:
+                        column_name = f"{col}_{level}"
+                        processed_data[column_name] = (input_data[col] == level).astype(int)
+                elif col == 'Standardized_Category':
+                    categories = ['Engineering', 'Sales', 'Marketing', 'HR', 'Finance', 'Operations']
+                    for category in categories:
+                        column_name = f"{col}_{category}"
+                        processed_data[column_name] = (input_data[col] == category).astype(int)
+                else:
+                    # For job titles and industries, we might need a different approach
+                    # For now, let's create a simple encoding
+                    processed_data[col] = input_data[col].astype('category').cat.codes
+        
+        return processed_data
+        
+    except Exception as e:
+        st.error(f"Error in preprocessing: {e}")
+        return None
+
+model, preprocessor = load_model_and_preprocessor()
+
+# User credentials (in a real app, use proper authentication)
+VALID_CREDENTIALS = {
+    "admin": "admin123",
+    "user1": "password1",
+    "user2": "password2"
+}
+
+# Login function
+def login():
+    st.title("Salary Predictor Login")
+    
+    # Create login form
+    with st.form("login_form"):
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        submit_button = st.form_submit_button("Login")
+        
+        if submit_button:
+            if username in VALID_CREDENTIALS and password == VALID_CREDENTIALS[username]:
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.success("Logged in successfully!")
+                st.rerun()
+            else:
+                st.error("Invalid username or password")
+
+# Main app function
+def salary_predictor():
+    st.title("Salary Prediction App")
+    st.write(f"Welcome, {st.session_state.username}!")
+    
+    # Logout button
+    if st.button("Logout"):
+        st.session_state.logged_in = False
+        st.rerun()
+    
+    if model is None:
+        st.error("Model could not be loaded. Please check your model file.")
+        return
+    
+    st.write("Please enter your details to get a salary prediction:")
+    
+    # Input fields
+    with st.form("prediction_form"):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            term = st.selectbox("Term", ["Full-time", "Part-time", "Contract", "Temporary", "Internship"])
+            years_exp = st.number_input("Years of Experience", min_value=0, max_value=50, value=5)
+            hiring = st.selectbox("Hiring", ["Direct Hire", "Recruiter", "Agency", "Other"])
+            industry = st.selectbox("Industry", [
+                "Technology", "Finance", "Healthcare", "Manufacturing", 
+                "Education", "Retail", "Other"
+            ])
+            qualification = st.selectbox("Qualification", [
+                "High School", "Bachelor's", "Master's", "PhD", 
+                "Professional Certification", "Other"
+            ])
+            
+        with col2:
+            sex = st.selectbox("Sex", ["Male", "Female", "Other"])
+            language = st.selectbox("Language", ["English", "Spanish", "French", "German", "Other"])
+            age = st.number_input("Age", min_value=18, max_value=70, value=30)
+            location = st.selectbox("Location", [
+                "Urban", "Suburban", "Rural", "Metropolitan", "Other"
+            ])
+            job_title = st.text_input("Job Title", "Software Engineer")
+            
+        # Additional fields that might be required by the model
+        col3, col4 = st.columns(2)
+        with col3:
+            level = st.selectbox("Level", ["Junior", "Mid", "Senior", "Lead", "Manager"])
+        with col4:
+            category = st.selectbox("Job Category", [
+                "Engineering", "Sales", "Marketing", "HR", "Finance", "Operations"
+            ])
+        
+        submit_button = st.form_submit_button("Predict Salary")
+        
+        if submit_button:
+            # Prepare input data
+            input_data = pd.DataFrame({
+                "Term": [term],
+                "Year of Exp.": [years_exp],
                 "Hiring": [hiring],
                 "Industry": [industry],
                 "Qualification": [qualification],
@@ -71,16 +269,16 @@
                 # Display prediction if successful
                 if prediction is not None:
                     # Format the prediction nicely
-                    if hasattr(prediction, 'len') and len(prediction) > 0:
+                    if hasattr(prediction, '__len__') and len(prediction) > 0:
                         salary_prediction = prediction[0]
                     else:
                         salary_prediction = prediction
                     
-                    st.success(f"🎯 Predicted Salary: ${salary_prediction:,.2f}")
+                    st.success(f"🎯 **Predicted Salary: ${salary_prediction:,.2f}**")
                     
                     # Add some context
                     st.info(f"""
-                    Prediction Details:
+                    **Prediction Details:**
                     - Experience: {years_exp} years
                     - Industry: {industry}
                     - Qualification: {qualification}
@@ -96,7 +294,7 @@
                 
                 # Enhanced debug information
                 with st.expander("🔍 Debug Information"):
-                    st.write("Input data:")
+                    st.write("**Input data:**")
                     st.write("- Shape:", input_data.shape)
                     st.write("- Columns:", input_data.columns.tolist())
                     st.write("- Data types:", input_data.dtypes.to_dict())
@@ -104,14 +302,14 @@
                     st.dataframe(input_data)
                     
                     # Model information
-                    st.write("Model information:")
-                    st.write("- Model type:", type(model).name)
+                    st.write("**Model information:**")
+                    st.write("- Model type:", type(model).__name__)
                     if hasattr(model, 'n_features_in_'):
                         st.write("- Expected features:", model.n_features_in_)
                     if hasattr(model, 'feature_names_in_'):
                         st.write("- Feature names:", model.feature_names_in_)
                     
-                    st.write("Suggested fixes:")
+                    st.write("**Suggested fixes:**")
                     st.write("1. Retrain the model and save both model and preprocessor")
                     st.write("2. Use a Pipeline that includes preprocessing")
                     st.write("3. Ensure feature names match exactly between training and prediction")
@@ -126,5 +324,5 @@ def main():
     else:
         salary_predictor()
 
-if name == "main":
+if __name__ == "__main__":
     main()
