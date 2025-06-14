@@ -218,7 +218,7 @@ def salary_predictor():
                     st.success("Using saved preprocessor")
                 else:
                     # If no preprocessor was saved, use our custom preprocessing
-                    st.warning("No preprocessor found. Using custom preprocessing approach.")
+                    #st.warning("No preprocessor found. Using custom preprocessing approach.")
                     processed_data = preprocess_input_data(input_data)
                     
                     if processed_data is None:
@@ -240,16 +240,16 @@ def salary_predictor():
                     prediction = model.predict(processed_data)
                     st.success("✅ Prediction successful with custom preprocessing")
                 except Exception as e1:
-                    st.warning(f"First approach failed: {e1}")
+                    #st.warning(f"First approach failed: {e1}")
                     
                     # Approach 2: Try with just numerical features
                     try:
                         numerical_data = input_data[['Year of Exp.', 'Age']].values
                         st.info("Trying with only numerical features...")
                         prediction = model.predict(numerical_data.reshape(1, -1))
-                        st.warning("⚠️ Prediction made with only numerical features (less accurate)")
+                        #st.warning("⚠️ Prediction made with only numerical features (less accurate)")
                     except Exception as e2:
-                        st.warning(f"Numerical-only approach failed: {e2}")
+                        #st.warning(f"Numerical-only approach failed: {e2}")
                         
                         # Approach 3: Try label encoding
                         try:
@@ -262,7 +262,7 @@ def salary_predictor():
                                 input_encoded[col] = le.fit_transform(input_data[col])
                             
                             prediction = model.predict(input_encoded)
-                            st.warning("⚠️ Prediction made with label encoding (may be inaccurate)")
+                            
                         except Exception as e3:
                             st.error(f"All approaches failed. Final error: {e3}")
                 
