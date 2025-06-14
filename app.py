@@ -245,7 +245,7 @@ def salary_predictor():
                     # Approach 2: Try with just numerical features
                     try:
                         numerical_data = input_data[['Year of Exp.', 'Age']].values
-                        st.info("Trying with only numerical features...")
+                        #st.info("Trying with only numerical features...")
                         prediction = model.predict(numerical_data.reshape(1, -1))
                         #st.warning("⚠️ Prediction made with only numerical features (less accurate)")
                     except Exception as e2:
