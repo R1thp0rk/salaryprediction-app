@@ -69,7 +69,7 @@ def preprocess_input_data(input_data):
         
         categorical_mappings = {
             'Term': ['Full-time', 'Part-time', 'Contract', 'Temporary', 'Internship'],
-            #'Hiring': ['Direct Hire', 'Recruiter', 'Agency', 'Other'],
+            'Hiring': ['Direct Hire', 'Recruiter', 'Agency', 'Other'],
             'Industry': ['Technology', 'Finance', 'Healthcare', 'Manufacturing', 'Education', 'Retail', 'Other'],
             'Qualification': ['High School', "Bachelor's", "Master's", 'PhD', 'Professional Certification', 'Other'],
             'Sex': ['Male', 'Female', 'Other'],
@@ -162,7 +162,7 @@ def salary_predictor():
         with col1:
             term = st.selectbox("Term", ["Full-time", "Part-time"])
             years_exp = st.number_input("Years of Experience", min_value=0, max_value=15, value=5)
-            #hiring = st.selectbox("Hiring", ["Direct Hire", "Recruiter", "Agency", "Other"])
+            hiring = st.selectbox("Hiring", ["Direct Hire", "Recruiter", "Agency", "Other"])
             industry = st.selectbox("Industry", [
                 "Information Technology", "General Business Services", "Human Resource", "Others", "Sales",
                 "Automotive", "Education", "Construction", "Financial Services", "Accounting/Audit/Tax Services",
@@ -210,7 +210,7 @@ def salary_predictor():
             input_data = pd.DataFrame({
                 "Term": [term],
                 "Year of Exp.": [years_exp],
-                #"Hiring": [hiring],
+                "Hiring": [hiring],
                 "Industry": [industry],
                 "Qualification": [qualification],
                 "Sex": [sex],
