@@ -69,7 +69,7 @@ def preprocess_input_data(input_data):
         
         categorical_mappings = {
             'Term': ['Full-time', 'Part-time', 'Contract', 'Temporary', 'Internship'],
-            'Hiring': ['Direct Hire', 'Recruiter', 'Agency', 'Other'],
+            #'Hiring': ['Direct Hire', 'Recruiter', 'Agency', 'Other'],
             'Industry': ['Technology', 'Finance', 'Healthcare', 'Manufacturing', 'Education', 'Retail', 'Other'],
             'Qualification': ['High School', "Bachelor's", "Master's", 'PhD', 'Professional Certification', 'Other'],
             'Sex': ['Male', 'Female', 'Other'],
@@ -210,7 +210,7 @@ def salary_predictor():
             input_data = pd.DataFrame({
                 "Term": [term],
                 "Year of Exp.": [years_exp],
-                "Hiring": [hiring],
+                #"Hiring": [hiring],
                 "Industry": [industry],
                 "Qualification": [qualification],
                 "Sex": [sex],
