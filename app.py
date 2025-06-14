@@ -160,25 +160,38 @@ def salary_predictor():
         col1, col2 = st.columns(2)
         
         with col1:
-            term = st.selectbox("Term", ["Full-time", "Part-time", "Contract", "Temporary", "Internship"])
-            years_exp = st.number_input("Years of Experience", min_value=0, max_value=50, value=5)
-            hiring = st.selectbox("Hiring", ["Direct Hire", "Recruiter", "Agency", "Other"])
+            term = st.selectbox("Term", ["Full-time", "Part-time"])
+            years_exp = st.number_input("Years of Experience", min_value=0, max_value=15, value=5)
+            #hiring = st.selectbox("Hiring", ["Direct Hire", "Recruiter", "Agency", "Other"])
             industry = st.selectbox("Industry", [
-                "Technology", "Finance", "Healthcare", "Manufacturing", 
-                "Education", "Retail", "Other"
+                "Information Technology", "General Business Services", "Human Resource", "Others", "Sales",
+                "Automotive", "Education", "Construction", "Financial Services", "Accounting/Audit/Tax Services",
+                "Manufacturing", "NGO/Charity/Social Services", "Real Estate", "Exec. / Management",
+                "Food & Beverages", "Telecommunication", "Logistics", "Healthcare", "Retail",
+                "Hotel/Hospitality", "Trading", "Engineering", "Advertising/Media/Publishing/Printing",
+                "Legal Services", "Energy/Power/Water/Oil & Gas", "Customer Service", "Garment Manufacturing",
+                "Agriculture", "Research", "Tourism", "Mining", "Entertainment"
             ])
+
             qualification = st.selectbox("Qualification", [
-                "High School", "Bachelor's", "Master's", "PhD", 
-                "Professional Certification", "Other"
+                "Bachelor Degree", "No limitations", "Associate Degree", "High School", "Master Degree"
             ])
+
             
         with col2:
-            sex = st.selectbox("Sex", ["Male", "Female", "Other"])
-            language = st.selectbox("Language", ["English", "Spanish", "French", "German", "Other"])
-            age = st.number_input("Age", min_value=18, max_value=70, value=30)
-            location = st.selectbox("Location", [
-                "Urban", "Suburban", "Rural", "Metropolitan", "Other"
+            sex = st.selectbox("Sex", ["Male", "Female", "Both"])
+            language = st.selectbox("Language", [
+                "English", "Chinese", "No need", "Chinese, English", "Japanese, English",
+                "Thai, English", "Korean, English", "Vietnamese, English", "French"
             ])
+            age = st.selectbox("Age", ["Age Limited", "Unlimited"])
+            location = st.selectbox("Location", [
+                "Phnom Penh", "Banteay Meanchey", "Siem Reap", "Preah Sihanouk", "Pailin", 
+                "Kandal", "Battambang", "Kampong Chhnang", "Kratie", "Pursat", "Takeo", 
+                "Mondulkiri", "Kampong Cham", "Tboung Khmum", "Kampong Thom", "Kampot", 
+                "Kampong Speu", "Svay Rieng", "Kompong Chhnang", "Koh Kong", "Rattanakiri"
+            ])
+
             job_title = st.text_input("Job Title", "Software Engineer")
             
         # Additional fields that might be required by the model
