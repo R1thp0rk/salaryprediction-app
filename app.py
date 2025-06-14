@@ -48,10 +48,10 @@ def preprocess_input_data(input_data):
         # First, let's see what the model expects
         feature_names = get_model_feature_names()
         
-        if feature_names is not None:
-            st.info(f"Model expects {len(feature_names)} features")
-            with st.expander("Expected Features"):
-                st.write(list(feature_names))
+        # if feature_names is not None:
+        #     st.info(f"Model expects {len(feature_names)} features")
+        #     with st.expander("Expected Features"):
+        #         st.write(list(feature_names))
         
         # Strategy 1: Try to create the exact features the model expects
         # We'll manually create dummy variables and ensure they match
@@ -226,11 +226,11 @@ def salary_predictor():
                         return
                 
                 # Show preprocessing results
-                with st.expander("Preprocessing Results"):
-                    st.write(f"Processed data shape: {processed_data.shape}")
-                    st.write("Processed features:", processed_data.columns.tolist() if hasattr(processed_data, 'columns') else 'Array format')
-                    if hasattr(processed_data, 'head'):
-                        st.write("Sample processed data:", processed_data.head())
+                # with st.expander("Preprocessing Results"):
+                #     st.write(f"Processed data shape: {processed_data.shape}")
+                #     st.write("Processed features:", processed_data.columns.tolist() if hasattr(processed_data, 'columns') else 'Array format')
+                #     if hasattr(processed_data, 'head'):
+                #         st.write("Sample processed data:", processed_data.head())
                 
                 # Try different approaches if the first one fails
                 prediction = None
@@ -253,7 +253,7 @@ def salary_predictor():
                         
                         # Approach 3: Try label encoding
                         try:
-                            st.info("Trying with label encoding...")
+                            #st.info("Trying with label encoding...")
                             from sklearn.preprocessing import LabelEncoder
                             
                             input_encoded = input_data.copy()
