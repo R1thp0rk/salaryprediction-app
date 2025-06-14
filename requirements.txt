@@ -1,6 +1,6 @@
 streamlit==1.34.0
 pandas==2.2.2
-scikit-learn==1.5.2  # Use a more recent stable version
+scikit-learn==1.6.1  # Use a more recent stable version
 numpy>=1.26.4,<2.0  # Use a stable numpy version compatible with scikit-learn
 python-dateutil>=2.8.2  # Required by pandas
 pytz>=2020.1  # Required by pandas
