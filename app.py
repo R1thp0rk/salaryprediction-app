@@ -70,18 +70,11 @@ def preprocess_input_data(input_data):
         categorical_mappings = {
             'Term': ['Full-time', 'Part-time', 'Contract', 'Temporary', 'Internship'],
             'Hiring': ['Direct Hire', 'Recruiter', 'Agency', 'Other'],
-            'Industry': ["Information Technology", "General Business Services", "Human Resource", "Others", "Sales",
-                "Automotive", "Education", "Construction", "Financial Services", "Accounting/Audit/Tax Services",
-                "Manufacturing", "NGO/Charity/Social Services", "Real Estate", "Exec. / Management", "Food & Beverages",
-                "Telecommunication", "Logistics", "Healthcare", "Retail", "Hotel/Hospitality",
-                "Accounting/Audit/Tax Service", "Trading", "Engineering", "Advertising/Media/Publishing/Printing",
-                "Legal Services", "Energy/Power/Water/Oil & Gas", "Customer Service", "Garment Manufacturing",
-                "Agriculture", "Research", "Tourism", "Mining", "Entertainment"],
-            'Qualification': ['High School', "Bachelor Degree", "Master Degree", 'No limitations', 'Associate Degree'],
-            'Sex': ['Male', 'Female', 'Both'],
+            'Industry': ['Technology', 'Finance', 'Healthcare', 'Manufacturing', 'Education', 'Retail', 'Other'],
+            'Qualification': ['High School', "Bachelor's", "Master's", 'PhD', 'Professional Certification', 'Other'],
+            'Sex': ['Male', 'Female', 'Other'],
             'Language': ['English', 'Spanish', 'French', 'German', 'Other'],
-            'Location': ['Phnom Penh', 'Siem Reap', 'Sihanoukville', 'Battambang', 'Banteay Meanchey', 'Kampong Cham', 'Kampong Thom', 'Kandal', 'Koh Kong', 'Kratie', 'Mondulkiri', 'Preah Vihear', 'Prey Veng', 'Pursat', 'Ratanakiri', 'Stung Treng', 'Svay Rieng', 'Takeo', 'Tboung Khmum'],
-            'Age': ['Age Limited',['Limited']]
+            'Location': ['Urban', 'Suburban', 'Rural', 'Metropolitan', 'Other'],
         }
         
         # Create dummy variables for each categorical column
