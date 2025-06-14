@@ -180,17 +180,11 @@ def salary_predictor():
             ])
             
         with col2:
-            sex = st.selectbox("Sex", ["Male", "Female", "Both"])
+            sex = st.selectbox("Sex", ["Male", "Female", "Other"])
             language = st.selectbox("Language", ["English", "Spanish", "French", "German", "Other"])
-            age = st.number_input("Age", ["Age Limited", "Limited"])
+            age = st.number_input("Age", min_value=18, max_value=70, value=30)
             location = st.selectbox("Location", [
-                "Information Technology", "General Business Services", "Human Resource", "Others", "Sales",
-                "Automotive", "Education", "Construction", "Financial Services", "Accounting/Audit/Tax Services",
-                "Manufacturing", "NGO/Charity/Social Services", "Real Estate", "Exec. / Management", "Food & Beverages",
-                "Telecommunication", "Logistics", "Healthcare", "Retail", "Hotel/Hospitality",
-                "Accounting/Audit/Tax Service", "Trading", "Engineering", "Advertising/Media/Publishing/Printing",
-                "Legal Services", "Energy/Power/Water/Oil & Gas", "Customer Service", "Garment Manufacturing",
-                "Agriculture", "Research", "Tourism", "Mining", "Entertainment"
+                "Urban", "Suburban", "Rural", "Metropolitan", "Other"
             ])
             job_title = st.text_input("Job Title", "Software Engineer")
             
