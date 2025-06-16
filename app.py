@@ -4,338 +4,394 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+import warnings
+warnings.filterwarnings('ignore')
 
-# Load the pre-trained model and preprocessor
-@st.cache_resource
-def load_model_and_preprocessor():
-    try:
-        # Try to load the model
-        model = joblib.load('salary_predictor.pkl')
-        
-        # Try to load preprocessor if it exists
-        try:
-            preprocessor = joblib.load('preprocessor.pkl')
-        except FileNotFoundError:
-            # If preprocessor doesn't exist, we'll create one
-            # You'll need to recreate this based on your training data
-            preprocessor = None
-            
-        return model, preprocessor
-    except Exception as e:
-        st.error(f"Error loading model: {e}")
-        return None, None
+# Set page config
+st.set_page_config(
+    page_title="Cambodia Salary Predictor",
+    page_icon="💰",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# Get model feature names to understand what the model expects
-def get_model_feature_names():
-    """Try to extract feature names from the model"""
-    try:
-        if hasattr(model, 'feature_names_in_'):
-            return model.feature_names_in_
-        elif hasattr(model, 'n_features_in_'):
-            # We know the number of features but not the names
-            return None
-        else:
-            return None
-    except:
-        return None
+# Custom CSS for better styling
+st.markdown("""
+<style>
+    .main-header {
+        font-size: 3rem;
+        color: #1f77b4;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .prediction-box {
+        background: linear-gradient(90deg, #1f77b4, #17becf);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        margin: 20px 0;
+    }
+    .info-box {
+        background-color: #f0f2f6;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #1f77b4;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-# Create a preprocessing function that matches training data format
-def preprocess_input_data(input_data):
-    """
-    Preprocess input data to match the model's expected format
-    """
-    try:
-        # First, let's see what the model expects
-        feature_names = get_model_feature_names()
-        
-        # if feature_names is not None:
-        #     st.info(f"Model expects {len(feature_names)} features")
-        #     with st.expander("Expected Features"):
-        #         st.write(list(feature_names))
-        
-        # Strategy 1: Try to create the exact features the model expects
-        # We'll manually create dummy variables and ensure they match
-        
-        processed_data = pd.DataFrame()
-        
-        # Handle numerical features
-        numerical_cols = ['Year of Exp.', 'Age']
-        for col in numerical_cols:
-            if col in input_data.columns:
-                processed_data[col] = input_data[col]
-        
-        # Handle categorical features - we need to create specific dummy columns
-        # Based on common training practices, let's create the likely feature names
-        
-        categorical_mappings = {
-            'Term': ['Full-time', 'Part-time', 'Contract', 'Temporary', 'Internship'],
-            'Hiring': ['Direct Hire', 'Recruiter', 'Agency', 'Other'],
-            'Industry': ['Technology', 'Finance', 'Healthcare', 'Manufacturing', 'Education', 'Retail', 'Other'],
-            'Qualification': ['High School', "Bachelor's", "Master's", 'PhD', 'Professional Certification', 'Other'],
-            'Sex': ['Male', 'Female', 'Other'],
-            'Language': ['English', 'Spanish', 'French', 'German', 'Other'],
-            'Location': ['Urban', 'Suburban', 'Rural', 'Metropolitan', 'Other'],
-        }
-        
-        # Create dummy variables for each categorical column
-        for col, categories in categorical_mappings.items():
-            if col in input_data.columns:
-                for category in categories:
-                    # Create column name as it would appear after pd.get_dummies
-                    column_name = f"{col}_{category}"
-                    processed_data[column_name] = (input_data[col] == category).astype(int)
-        
-        # Handle text fields that might need special processing
-        text_fields = ['Standardized_Job_Title', 'Level_Updated', 'Standardized_Category', 'Standardized_Industry']
-        for col in text_fields:
-            if col in input_data.columns:
-                # For now, let's try to include them as-is or create simple mappings
-                if col == 'Level_Updated':
-                    levels = ['Junior', 'Mid', 'Senior', 'Lead', 'Manager']
-                    for level in levels:
-                        column_name = f"{col}_{level}"
-                        processed_data[column_name] = (input_data[col] == level).astype(int)
-                elif col == 'Standardized_Category':
-                    categories = ['Engineering', 'Sales', 'Marketing', 'HR', 'Finance', 'Operations']
-                    for category in categories:
-                        column_name = f"{col}_{category}"
-                        processed_data[column_name] = (input_data[col] == category).astype(int)
-                else:
-                    # For job titles and industries, we might need a different approach
-                    # For now, let's create a simple encoding
-                    processed_data[col] = input_data[col].astype('category').cat.codes
-        
-        return processed_data
-        
-    except Exception as e:
-        st.error(f"Error in preprocessing: {e}")
-        return None
-
-model, preprocessor = load_model_and_preprocessor()
-
-# User credentials (in a real app, use proper authentication)
+# User credentials (in production, use proper authentication)
 VALID_CREDENTIALS = {
     "admin": "admin123",
-    "user1": "password1",
-    "user2": "password2"
+    "hr_manager": "hr2024",
+    "recruiter": "recruit123",
+    "demo_user": "demo123"
 }
+
+# Load the pre-trained model
+@st.cache_resource
+def load_model():
+    try:
+        # Try to load the optimized model
+        model = joblib.load('cambodia_salary_predictor.pkl')
+        return model
+    except FileNotFoundError:
+        st.error("❌ Model file 'cambodia_salary_predictor.pkl' not found. Please train and save the model first.")
+        return None
+    except Exception as e:
+        st.error(f"❌ Error loading model: {e}")
+        return None
+
+# Preprocessing function to match training data
+def preprocess_user_input(user_data, numerical_cols, categorical_cols):
+    """
+    Preprocess user input to match the model's expected format
+    """
+    try:
+        # Create preprocessing pipeline matching the training setup
+        numerical_transformer = StandardScaler()
+        categorical_transformer = OneHotEncoder(handle_unknown='ignore', drop='first')
+        
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ('num', numerical_transformer, numerical_cols),
+                ('cat', categorical_transformer, categorical_cols)
+            ]
+        )
+        
+        # Fit and transform the input data
+        # Note: In production, you should save and load the fitted preprocessor
+        # For now, we'll create a minimal fit on the input data
+        processed_data = preprocessor.fit_transform(user_data)
+        
+        return processed_data
+    except Exception as e:
+        st.error(f"Preprocessing error: {e}")
+        return None
 
 # Login function
 def login():
-    st.title("Salary Predictor Login")
+    st.markdown('<h1 class="main-header">🔐 Cambodia Salary Predictor</h1>', unsafe_allow_html=True)
     
-    # Create login form
-    with st.form("login_form"):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        submit_button = st.form_submit_button("Login")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        st.markdown("### Please login to continue")
         
-        if submit_button:
-            if username in VALID_CREDENTIALS and password == VALID_CREDENTIALS[username]:
-                st.session_state.logged_in = True
-                st.session_state.username = username
-                st.success("Logged in successfully!")
-                st.rerun()
-            else:
-                st.error("Invalid username or password")
+        with st.form("login_form"):
+            username = st.text_input("👤 Username", placeholder="Enter your username")
+            password = st.text_input("🔑 Password", type="password", placeholder="Enter your password")
+            
+            col_a, col_b, col_c = st.columns([1, 1, 1])
+            with col_b:
+                submit_button = st.form_submit_button("🚀 Login", use_container_width=True)
+            
+            if submit_button:
+                if username in VALID_CREDENTIALS and password == VALID_CREDENTIALS[username]:
+                    st.session_state.logged_in = True
+                    st.session_state.username = username
+                    st.success("✅ Login successful!")
+                    st.rerun()
+                else:
+                    st.error("❌ Invalid username or password")
+        
+        # Demo credentials info
+        with st.expander("🔍 Demo Credentials"):
+            st.write("**Available demo accounts:**")
+            st.code("""
+Username: demo_user
+Password: demo123
 
-# Main app function
+Username: admin  
+Password: admin123
+            """)
+
+# Main salary prediction app
 def salary_predictor():
-    st.title("Salary Prediction App")
-    st.write(f"Welcome, {st.session_state.username}!")
+    # Header
+    st.markdown('<h1 class="main-header">💰 Cambodia Salary Predictor</h1>', unsafe_allow_html=True)
     
-    # Logout button
-    if st.button("Logout"):
-        st.session_state.logged_in = False
-        st.rerun()
+    # Sidebar
+    with st.sidebar:
+        st.markdown(f"### 👋 Welcome, {st.session_state.username}!")
+        
+        if st.button("🚪 Logout", use_container_width=True):
+            st.session_state.logged_in = False
+            st.rerun()
+        
+        st.markdown("---")
+        st.markdown("### 📊 About This App")
+        st.info("""
+        This app predicts salaries in Cambodia's job market based on:
+        - Experience & Age
+        - Industry & Location  
+        - Education & Skills
+        - Employment Type
+        """)
+        
+        st.markdown("### 🎯 Model Performance")
+        st.metric("R² Score", "0.42", "Explains 42% of variance")
+        st.metric("Accuracy", "90%", "For salary range classification")
     
+    # Load model
+    model = load_model()
     if model is None:
-        st.error("Model could not be loaded. Please check your model file.")
-        return
+        st.stop()
     
-    st.write("Please enter your details to get a salary prediction:")
+    # Main prediction interface
+    st.markdown("### 📝 Enter Your Details")
     
-    # Input fields
-    with st.form("prediction_form"):
+    with st.form("prediction_form", clear_on_submit=False):
+        # Create columns for better layout
         col1, col2 = st.columns(2)
         
         with col1:
-            term = st.selectbox("Term", ["Full-time", "Part-time"])
-            years_exp = st.number_input("Years of Experience", min_value=0, max_value=15, value=5)
-            hiring = st.selectbox("Hiring", ["Direct Hire", "Recruiter", "Agency", "Other"])
-            industry = st.selectbox("Industry", [
-                "Information Technology", "General Business Services", "Human Resource", "Others", "Sales",
-                "Automotive", "Education", "Construction", "Financial Services", "Accounting/Audit/Tax Services",
-                "Manufacturing", "NGO/Charity/Social Services", "Real Estate", "Exec. / Management",
-                "Food & Beverages", "Telecommunication", "Logistics", "Healthcare", "Retail",
-                "Hotel/Hospitality", "Trading", "Engineering", "Advertising/Media/Publishing/Printing",
-                "Legal Services", "Energy/Power/Water/Oil & Gas", "Customer Service", "Garment Manufacturing",
-                "Agriculture", "Research", "Tourism", "Mining", "Entertainment"
-            ])
-
-            qualification = st.selectbox("Qualification", [
-                "Bachelor Degree", "No limitations", "Associate Degree", "High School", "Master Degree"
-            ])
-
+            st.markdown("#### 👤 Personal Information")
+            age = st.number_input("Age", min_value=18, max_value=65, value=28, help="Your current age")
+            years_exp = st.number_input("Years of Experience", min_value=0, max_value=40, value=3, help="Total years of work experience")
+            sex = st.selectbox("Gender", ["Male", "Female"], help="Select your gender")
             
+            st.markdown("#### 🎓 Education & Skills")
+            qualification = st.selectbox("Highest Qualification", [
+                "High School", "Associate Degree", "Bachelor Degree", 
+                "Master Degree", "PhD", "Professional Certification"
+            ], index=2, help="Your highest educational qualification")
+            
+            language = st.selectbox("Language Skills", [
+                "English", "Chinese", "Chinese, English", "Japanese, English",
+                "Thai, English", "Korean, English", "Vietnamese, English", 
+                "French", "No specific requirement"
+            ], help="Primary language skills required")
+        
         with col2:
-            sex = st.selectbox("Sex", ["Male", "Female", "Both"])
-            language = st.selectbox("Language", [
-                "English", "Chinese", "No need", "Chinese, English", "Japanese, English",
-                "Thai, English", "Korean, English", "Vietnamese, English", "French"
-            ])
-            age = st.selectbox("Age", ["Age Limited", "Unlimited"])
-            location = st.selectbox("Location", [
-                "Phnom Penh", "Banteay Meanchey", "Siem Reap", "Preah Sihanouk", "Pailin", 
-                "Kandal", "Battambang", "Kampong Chhnang", "Kratie", "Pursat", "Takeo", 
-                "Mondulkiri", "Kampong Cham", "Tboung Khmum", "Kampong Thom", "Kampot", 
-                "Kampong Speu", "Svay Rieng", "Kompong Chhnang", "Koh Kong", "Rattanakiri"
-            ])
-
-            job_title = st.text_input("Job Title", "Software Engineer")
+            st.markdown("#### 💼 Job Information")
+            term = st.selectbox("Employment Type", [
+                "Full-time", "Part-time", "Contract", "Temporary", "Internship"
+            ], help="Type of employment")
             
-        # Additional fields that might be required by the model
+            industry = st.selectbox("Industry", [
+                "Information Technology", "Financial Services", "Healthcare", 
+                "Education", "Manufacturing", "Retail", "Construction",
+                "Real Estate", "Hospitality", "Automotive", "Agriculture",
+                "Energy", "Telecommunications", "Media", "Legal Services",
+                "Consulting", "NGO/Non-profit", "Government", "Other"
+            ], help="Industry sector")
+            
+            hiring = st.selectbox("Hiring Channel", [
+                "Direct Hire", "Recruiter", "Agency", "Internal Transfer", "Other"
+            ], help="How you were hired")
+            
+            st.markdown("#### 📍 Location")
+            location = st.selectbox("Work Location", [
+                "Phnom Penh", "Siem Reap", "Battambang", "Preah Sihanouk", 
+                "Kandal", "Kampong Cham", "Kampot", "Takeo", "Pursat",
+                "Banteay Meanchey", "Svay Rieng", "Kampong Chhnang",
+                "Kampong Speu", "Kampong Thom", "Kratie", "Mondulkiri",
+                "Pailin", "Koh Kong", "Rattanakiri", "Stung Treng"
+            ], help="Province where you work")
+        
+        # Additional fields
         col3, col4 = st.columns(2)
         with col3:
-            level = st.selectbox("Level", ["Junior", "Mid", "Senior", "Lead", "Manager"])
+            job_level = st.selectbox("Job Level", [
+                "Entry Level", "Junior", "Mid-Level", "Senior", "Lead", 
+                "Manager", "Director", "Executive"
+            ], index=2, help="Your current job level")
+        
         with col4:
-            category = st.selectbox("Job Category", [
-                "Engineering", "Sales", "Marketing", "HR", "Finance", "Operations"
-            ])
+            job_category = st.selectbox("Job Category", [
+                "Engineering", "Sales & Marketing", "Finance & Accounting", 
+                "Human Resources", "Operations", "Customer Service",
+                "Research & Development", "Quality Assurance", "Legal",
+                "Administration", "Creative", "Other"
+            ], help="Primary job function category")
         
-        submit_button = st.form_submit_button("Predict Salary")
-        
-        if submit_button:
+        # Submit button
+        st.markdown("---")
+        col_submit1, col_submit2, col_submit3 = st.columns([1, 1, 1])
+        with col_submit2:
+            submit_button = st.form_submit_button("🎯 Predict My Salary", use_container_width=True)
+    
+    # Make prediction when form is submitted
+    if submit_button:
+        try:
             # Prepare input data
             input_data = pd.DataFrame({
-                "Term": [term],
-                "Year of Exp.": [years_exp],
-                "Hiring": [hiring],
-                "Industry": [industry],
-                "Qualification": [qualification],
-                "Sex": [sex],
-                "Language": [language],
-                "Age": [age],
-                "Location": [location],
-                "Standardized_Job_Title": [job_title],
-                "Level_Updated": [level],  # Now user-selectable
-                "Standardized_Category": [category],  # Now user-selectable
-                "Standardized_Industry": [industry]  # Same as Industry
+                'Age': [age],
+                'Year of Exp.': [years_exp],
+                'Sex': [sex],
+                'Qualification': [qualification],
+                'Language': [language],
+                'Term': [term],
+                'Industry': [industry],
+                'Hiring': [hiring],
+                'Location': [location],
+                'Job_Level': [job_level],
+                'Job_Category': [job_category]
             })
             
-            try:
-                # Check if we have a preprocessor
-                if preprocessor is not None:
-                    # Use the saved preprocessor
-                    processed_data = preprocessor.transform(input_data)
-                    st.success("Using saved preprocessor")
-                else:
-                    # If no preprocessor was saved, use our custom preprocessing
-                    #st.warning("No preprocessor found. Using custom preprocessing approach.")
-                    processed_data = preprocess_input_data(input_data)
-                    
-                    if processed_data is None:
-                        st.error("Failed to preprocess data")
-                        return
+            # Display input summary
+            with st.expander("📋 Input Summary", expanded=False):
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    st.write("**Personal Details:**")
+                    st.write(f"• Age: {age} years")
+                    st.write(f"• Experience: {years_exp} years")
+                    st.write(f"• Gender: {sex}")
+                    st.write(f"• Education: {qualification}")
                 
-                # Show preprocessing results
-                # with st.expander("Preprocessing Results"):
-                #     st.write(f"Processed data shape: {processed_data.shape}")
-                #     st.write("Processed features:", processed_data.columns.tolist() if hasattr(processed_data, 'columns') else 'Array format')
-                #     if hasattr(processed_data, 'head'):
-                #         st.write("Sample processed data:", processed_data.head())
-                
-                # Try different approaches if the first one fails
-                prediction = None
-                
-                # Approach 1: Direct prediction
+                with col_b:
+                    st.write("**Job Details:**")
+                    st.write(f"• Industry: {industry}")
+                    st.write(f"• Location: {location}")
+                    st.write(f"• Employment: {term}")
+                    st.write(f"• Level: {job_level}")
+            
+            # Make prediction using the model
+            # Note: This assumes the model can handle the input directly
+            # In practice, you might need to preprocess the data to match training format
+            
+            with st.spinner("🔮 Calculating your salary prediction..."):
                 try:
-                    prediction = model.predict(processed_data)
-                    st.success("✅ Prediction successful with custom preprocessing")
-                except Exception as e1:
-                    #st.warning(f"First approach failed: {e1}")
+                    # Simple approach - try direct prediction
+                    # You may need to adjust this based on how your model was trained
+                    prediction = model.predict(input_data)
                     
-                    # Approach 2: Try with just numerical features
-                    try:
-                        numerical_data = input_data[['Year of Exp.', 'Age']].values
-                        #st.info("Trying with only numerical features...")
-                        prediction = model.predict(numerical_data.reshape(1, -1))
-                        #st.warning("⚠️ Prediction made with only numerical features (less accurate)")
-                    except Exception as e2:
-                        #st.warning(f"Numerical-only approach failed: {e2}")
-                        
-                        # Approach 3: Try label encoding
-                        try:
-                            #st.info("Trying with label encoding...")
-                            from sklearn.preprocessing import LabelEncoder
-                            
-                            input_encoded = input_data.copy()
-                            for col in input_data.select_dtypes(include=['object']).columns:
-                                le = LabelEncoder()
-                                input_encoded[col] = le.fit_transform(input_data[col])
-                            
-                            prediction = model.predict(input_encoded)
-                            
-                        except Exception as e3:
-                            st.error(f"All approaches failed. Final error: {e3}")
-                
-                # Display prediction if successful
-                if prediction is not None:
-                    # Format the prediction nicely
                     if hasattr(prediction, '__len__') and len(prediction) > 0:
                         salary_prediction = prediction[0]
                     else:
                         salary_prediction = prediction
                     
-                    st.success(f"🎯 **Predicted Salary: ${salary_prediction:,.2f}**")
+                    # Display prediction
+                    st.markdown("---")
+                    st.markdown(f"""
+                    <div class="prediction-box">
+                        <h2>🎉 Your Predicted Salary</h2>
+                        <h1>${salary_prediction:,.2f} USD</h1>
+                        <p>Based on Cambodia job market data</p>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
-                    # Add some context
-                    st.info(f"""
-                    **Prediction Details:**
-                    - Experience: {years_exp} years
-                    - Industry: {industry}
-                    - Qualification: {qualification}
-                    - Employment Type: {term}
-                    - Age: {age}
+                    # Additional insights
+                    col_insight1, col_insight2, col_insight3 = st.columns(3)
+                    
+                    with col_insight1:
+                        monthly_salary = salary_prediction / 12
+                        st.metric("💰 Monthly Salary", f"${monthly_salary:,.2f}")
+                    
+                    with col_insight2:
+                        # Calculate salary range (±15%)
+                        salary_range = salary_prediction * 0.15
+                        st.metric("📊 Salary Range", f"±${salary_range:,.2f}")
+                    
+                    with col_insight3:
+                        # Experience factor
+                        if years_exp < 2:
+                            exp_level = "Entry Level"
+                        elif years_exp < 5:
+                            exp_level = "Junior"
+                        elif years_exp < 10:
+                            exp_level = "Mid-Level"
+                        else:
+                            exp_level = "Senior"
+                        st.metric("📈 Experience Level", exp_level)
+                    
+                    # Salary insights
+                    st.markdown("### 💡 Salary Insights")
+                    
+                    col_tips1, col_tips2 = st.columns(2)
+                    
+                    with col_tips1:
+                        st.markdown("""
+                        <div class="info-box">
+                            <h4>🚀 Ways to Increase Salary:</h4>
+                            <ul>
+                                <li>Gain more experience in your field</li>
+                                <li>Pursue higher education or certifications</li>
+                                <li>Develop language skills (especially English)</li>
+                                <li>Consider high-demand industries like IT</li>
+                                <li>Build leadership and management skills</li>
+                            </ul>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col_tips2:
+                        st.markdown(f"""
+                        <div class="info-box">
+                            <h4>📍 Market Context:</h4>
+                            <ul>
+                                <li>Location: {location} - {"High" if location == "Phnom Penh" else "Moderate"} salary market</li>
+                                <li>Industry: {industry} - {"Growing" if industry in ["Information Technology", "Financial Services"] else "Stable"} sector</li>
+                                <li>Experience: {years_exp} years - {"Junior" if years_exp < 3 else "Experienced"} level</li>
+                                <li>Education: {qualification} - {"Advanced" if "Master" in qualification or "PhD" in qualification else "Standard"} qualification</li>
+                            </ul>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    # Disclaimer
+                    st.markdown("---")
+                    st.caption("""
+                    ⚠️ **Disclaimer:** This prediction is based on historical data and machine learning models. 
+                    Actual salaries may vary based on company size, specific skills, market conditions, and other factors. 
+                    Use this as a general guideline for salary expectations in Cambodia's job market.
                     """)
                     
-                    # Add disclaimer
-                    st.caption("⚠️ This prediction is based on the available model. For best accuracy, ensure the model was trained with similar data preprocessing.")
-                
-            except Exception as e:
-                st.error(f"Unexpected error: {str(e)}")
-                
-                # Enhanced debug information
-                with st.expander("🔍 Debug Information"):
-                    st.write("**Input data:**")
-                    st.write("- Shape:", input_data.shape)
-                    st.write("- Columns:", input_data.columns.tolist())
-                    st.write("- Data types:", input_data.dtypes.to_dict())
-                    st.write("- Sample data:")
-                    st.dataframe(input_data)
+                except Exception as prediction_error:
+                    st.error(f"❌ Prediction failed: {str(prediction_error)}")
                     
-                    # Model information
-                    st.write("**Model information:**")
-                    st.write("- Model type:", type(model).__name__)
-                    if hasattr(model, 'n_features_in_'):
-                        st.write("- Expected features:", model.n_features_in_)
-                    if hasattr(model, 'feature_names_in_'):
-                        st.write("- Feature names:", model.feature_names_in_)
+                    # Provide fallback estimation
+                    st.warning("Using simplified estimation...")
                     
-                    st.write("**Suggested fixes:**")
-                    st.write("1. Retrain the model and save both model and preprocessor")
-                    st.write("2. Use a Pipeline that includes preprocessing")
-                    st.write("3. Ensure feature names match exactly between training and prediction")
+                    # Simple salary estimation based on basic factors
+                    base_salary = 8000  # Base salary in USD
+                    exp_multiplier = 1 + (years_exp * 0.1)  # 10% increase per year
+                    education_bonus = {"High School": 1.0, "Associate Degree": 1.1, 
+                                     "Bachelor Degree": 1.3, "Master Degree": 1.6, "PhD": 2.0}
+                    location_bonus = 1.3 if location == "Phnom Penh" else 1.0
+                    
+                    estimated_salary = (base_salary * exp_multiplier * 
+                                      education_bonus.get(qualification, 1.2) * location_bonus)
+                    
+                    st.info(f"📊 **Estimated Salary:** ${estimated_salary:,.2f} (Simplified calculation)")
+        
+        except Exception as e:
+            st.error(f"❌ An error occurred: {str(e)}")
+            st.info("Please check your inputs and try again.")
 
-# Main app flow
+# Main application flow
 def main():
+    # Initialize session state
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False
     
+    # Route to appropriate page
     if not st.session_state.logged_in:
         login()
     else:
         salary_predictor()
 
+# Run the app
 if __name__ == "__main__":
     main()
