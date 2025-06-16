@@ -188,7 +188,7 @@ def salary_predictor():
         with col2:
             st.markdown("#### 💼 Job Information")
             term = st.selectbox("Employment Type", [
-                "Full-time", "Part-time", "Contract", "Temporary", "Internship"
+                "Full-time", "Part-time"
             ], help="Type of employment")
             
             industry = st.selectbox("Industry", [
@@ -359,7 +359,7 @@ def salary_predictor():
                     """)
                     
                 except Exception as prediction_error:
-                    st.error(f"❌ Prediction failed: {str(prediction_error)}")
+                    #st.error(f"❌ Prediction failed: {str(prediction_error)}")
                     
                     # Provide fallback estimation
                     st.warning("Using simplified estimation...")
