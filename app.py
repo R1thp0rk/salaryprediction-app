@@ -199,9 +199,9 @@ def salary_predictor():
                 "Consulting", "NGO/Non-profit", "Government", "Other"
             ], help="Industry sector")
             
-            # hiring = st.selectbox("Hiring Channel", [
-            #     "Direct Hire", "Recruiter", "Agency", "Internal Transfer", "Other"
-            # ], help="How you were hired")
+            hiring = st.selectbox("Hiring Channel", [
+                "Direct Hire", "Recruiter", "Agency", "Internal Transfer", "Other"
+            ], help="How you were hired")
             
             st.markdown("#### 📍 Location")
             location = st.selectbox("Work Location", [
