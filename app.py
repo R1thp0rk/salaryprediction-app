@@ -82,8 +82,6 @@ def preprocess_user_input(user_data, numerical_cols, categorical_cols):
         )
         
         # Fit and transform the input data
-        # Note: In production, you should save and load the fitted preprocessor
-        # For now, we'll create a minimal fit on the input data
         processed_data = preprocessor.fit_transform(user_data)
         
         return processed_data
@@ -269,115 +267,91 @@ def salary_predictor():
                     st.write(f"• Level: {job_level}")
             
             # Make prediction using the model
-            # Note: This assumes the model can handle the input directly
-            # In practice, you might need to preprocess the data to match training format
-            
             with st.spinner("🔮 Calculating your salary prediction..."):
-                try:
-                    # Simple approach - try direct prediction
-                    # You may need to adjust this based on how your model was trained
-                    prediction = model.predict(input_data)
-                    
-                    if hasattr(prediction, '__len__') and len(prediction) > 0:
-                        salary_prediction = prediction[0]
+                prediction = model.predict(input_data)
+                
+                if hasattr(prediction, '__len__') and len(prediction) > 0:
+                    salary_prediction = prediction[0]
+                else:
+                    salary_prediction = prediction
+                
+                # Display prediction
+                st.markdown("---")
+                st.markdown(f"""
+                <div class="prediction-box">
+                    <h2>🎉 Your Predicted Salary</h2>
+                    <h1>${salary_prediction:,.2f} USD</h1>
+                    <p>Based on Cambodia job market data</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Additional insights
+                col_insight1, col_insight2, col_insight3 = st.columns(3)
+                
+                with col_insight1:
+                    monthly_salary = salary_prediction / 12
+                    st.metric("💰 Monthly Salary", f"${monthly_salary:,.2f}")
+                
+                with col_insight2:
+                    # Calculate salary range (±15%)
+                    salary_range = salary_prediction * 0.15
+                    st.metric("📊 Salary Range", f"±${salary_range:,.2f}")
+                
+                with col_insight3:
+                    # Experience factor
+                    if years_exp < 2:
+                        exp_level = "Entry Level"
+                    elif years_exp < 5:
+                        exp_level = "Junior"
+                    elif years_exp < 10:
+                        exp_level = "Mid-Level"
                     else:
-                        salary_prediction = prediction
-                    
-                    # Display prediction
-                    st.markdown("---")
-                    st.markdown(f"""
-                    <div class="prediction-box">
-                        <h2>🎉 Your Predicted Salary</h2>
-                        <h1>${salary_prediction:,.2f} USD</h1>
-                        <p>Based on Cambodia job market data</p>
+                        exp_level = "Senior"
+                    st.metric("📈 Experience Level", exp_level)
+                
+                # Salary insights
+                st.markdown("### 💡 Salary Insights")
+                
+                col_tips1, col_tips2 = st.columns(2)
+                
+                with col_tips1:
+                    st.markdown("""
+                    <div class="info-box">
+                        <h4>🚀 Ways to Increase Salary:</h4>
+                        <ul>
+                            <li>Gain more experience in your field</li>
+                            <li>Pursue higher education or certifications</li>
+                            <li>Develop language skills (especially English)</li>
+                            <li>Consider high-demand industries like IT</li>
+                            <li>Build leadership and management skills</li>
+                        </ul>
                     </div>
                     """, unsafe_allow_html=True)
-                    
-                    # Additional insights
-                    col_insight1, col_insight2, col_insight3 = st.columns(3)
-                    
-                    with col_insight1:
-                        monthly_salary = salary_prediction / 12
-                        st.metric("💰 Monthly Salary", f"${monthly_salary:,.2f}")
-                    
-                    with col_insight2:
-                        # Calculate salary range (±15%)
-                        salary_range = salary_prediction * 0.15
-                        st.metric("📊 Salary Range", f"±${salary_range:,.2f}")
-                    
-                    with col_insight3:
-                        # Experience factor
-                        if years_exp < 2:
-                            exp_level = "Entry Level"
-                        elif years_exp < 5:
-                            exp_level = "Junior"
-                        elif years_exp < 10:
-                            exp_level = "Mid-Level"
-                        else:
-                            exp_level = "Senior"
-                        st.metric("📈 Experience Level", exp_level)
-                    
-                    # Salary insights
-                    st.markdown("### 💡 Salary Insights")
-                    
-                    col_tips1, col_tips2 = st.columns(2)
-                    
-                    with col_tips1:
-                        st.markdown("""
-                        <div class="info-box">
-                            <h4>🚀 Ways to Increase Salary:</h4>
-                            <ul>
-                                <li>Gain more experience in your field</li>
-                                <li>Pursue higher education or certifications</li>
-                                <li>Develop language skills (especially English)</li>
-                                <li>Consider high-demand industries like IT</li>
-                                <li>Build leadership and management skills</li>
-                            </ul>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col_tips2:
-                        st.markdown(f"""
-                        <div class="info-box">
-                            <h4>📍 Market Context:</h4>
-                            <ul>
-                                <li>Location: {location} - {"High" if location == "Phnom Penh" else "Moderate"} salary market</li>
-                                <li>Industry: {industry} - {"Growing" if industry in ["Information Technology", "Financial Services"] else "Stable"} sector</li>
-                                <li>Experience: {years_exp} years - {"Junior" if years_exp < 3 else "Experienced"} level</li>
-                                <li>Education: {qualification} - {"Advanced" if "Master" in qualification or "PhD" in qualification else "Standard"} qualification</li>
-                            </ul>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    # Disclaimer
-                    st.markdown("---")
-                    st.caption("""
-                    ⚠️ **Disclaimer:** This prediction is based on historical data and machine learning models. 
-                    Actual salaries may vary based on company size, specific skills, market conditions, and other factors. 
-                    Use this as a general guideline for salary expectations in Cambodia's job market.
-                    """)
-                    
-                except Exception as prediction_error:
-                    #st.error(f"❌ Prediction failed: {str(prediction_error)}")
-                    
-                    # Provide fallback estimation
-                    st.warning("Using simplified estimation...")
-                    
-                    # Simple salary estimation based on basic factors
-                    base_salary = 150  # Base salary in USD
-                    exp_multiplier = 1 + (years_exp * 0.1)  # 10% increase per year
-                    education_bonus = {"High School": 1.0, "Associate Degree": 1.1, 
-                                     "Bachelor Degree": 1.3, "Master Degree": 1.6, "PhD": 2.0}
-                    location_bonus = 1.3 if location == "Phnom Penh" else 1.0
-                    
-                    estimated_salary = (base_salary * exp_multiplier * 
-                                      education_bonus.get(qualification, 1.2) * location_bonus)
-                    
-                    st.info(f"📊 **Estimated Salary:** ${estimated_salary:,.2f} (Simplified calculation)")
+                
+                with col_tips2:
+                    st.markdown(f"""
+                    <div class="info-box">
+                        <h4>📍 Market Context:</h4>
+                        <ul>
+                            <li>Location: {location} - {"High" if location == "Phnom Penh" else "Moderate"} salary market</li>
+                            <li>Industry: {industry} - {"Growing" if industry in ["Information Technology", "Financial Services"] else "Stable"} sector</li>
+                            <li>Experience: {years_exp} years - {"Junior" if years_exp < 3 else "Experienced"} level</li>
+                            <li>Education: {qualification} - {"Advanced" if "Master" in qualification or "PhD" in qualification else "Standard"} qualification</li>
+                        </ul>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # Disclaimer
+                st.markdown("---")
+                st.caption("""
+                ⚠️ **Disclaimer:** This prediction is based on historical data and machine learning models. 
+                Actual salaries may vary based on company size, specific skills, market conditions, and other factors. 
+                Use this as a general guideline for salary expectations in Cambodia's job market.
+                """)
         
         except Exception as e:
-            st.error(f"❌ An error occurred: {str(e)}")
-            st.info("Please check your inputs and try again.")
+            st.error(f"❌ An error occurred during prediction: {str(e)}")
+            st.info("Please check your inputs and try again. If the problem persists, the model may need to be retrained.")
 
 # Main application flow
 def main():
