@@ -55,10 +55,10 @@ VALID_CREDENTIALS = {
 def load_model():
     try:
         # Try to load the optimized model
-        model = joblib.load('salary_predictor.pkl')
+        model = joblib.load('cambodia_salary_predictor.pkl')
         return model
     except FileNotFoundError:
-        st.error("❌ Model file 'salary_predictor.pkl' not found. Please train and save the model first.")
+        st.error("❌ Model file 'cambodia_salary_predictor.pkl' not found. Please train and save the model first.")
         return None
     except Exception as e:
         st.error(f"❌ Error loading model: {e}")
