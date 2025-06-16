@@ -364,7 +364,7 @@ def salary_predictor():
                     st.warning("Using simplified estimation...")
                     
                     # Simple salary estimation based on basic factors
-                    base_salary = 8000  # Base salary in USD
+                    base_salary = 10  # Base salary in USD
                     exp_multiplier = 1 + (years_exp * 0.1)  # 10% increase per year
                     education_bonus = {"High School": 1.0, "Associate Degree": 1.1, 
                                      "Bachelor Degree": 1.3, "Master Degree": 1.6, "PhD": 2.0}
