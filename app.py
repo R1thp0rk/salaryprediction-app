@@ -216,8 +216,7 @@ def salary_predictor():
         col3, col4 = st.columns(2)
         with col3:
             job_level = st.selectbox("Job Level", [
-                "Entry Level", "Junior", "Mid-Level", "Senior", "Lead", 
-                "Manager", "Director", "Executive"
+                "Entry-Level", "Junior", "Mid-Level", "Senior", "Senior-Level", 
             ], index=2, help="Your current job level")
         
         with col4:
